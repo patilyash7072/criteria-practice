@@ -21,7 +21,7 @@ public abstract class BaseEntity{
     protected boolean isActive;
 
     @LastModifiedDate
-    protected LocalDateTime modifiedDateTime;
+    protected LocalDateTime modifiedAt;
 
     @LastModifiedBy
     protected String modifiedBy;
@@ -30,12 +30,12 @@ public abstract class BaseEntity{
     @PrePersist
     public void prePersist() {
         isActive = true;
-        modifiedDateTime = LocalDateTime.now();
+        modifiedAt = LocalDateTime.now();
         modifiedBy = "system";
     }
 
     @PreUpdate
     public void preUpdate() {
-        modifiedDateTime = LocalDateTime.now();
+        modifiedAt = LocalDateTime.now();
     }
 }

@@ -52,4 +52,10 @@ public class EmployeeController {
     public List<Employee> searchEmployees(@PathParam("searchText") String searchText) {
         return employeeService.search(searchText);
     }
+
+    @POST
+    @Path("/filter")
+    public List<Employee> filterEmployees(Employee employee) {
+        return employeeService.filter(employee);
+    }
 }

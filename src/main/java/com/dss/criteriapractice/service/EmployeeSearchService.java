@@ -12,12 +12,12 @@ import java.util.List;
 public class EmployeeSearchService extends SearchService<EmployeeEntity, Employee> {
     public EmployeeSearchService(EntityManager em) {
         super(em, EmployeeEntity.class, EmployeeEntity::toDTO);
+        setExcludedFields();
     }
 
-
-    protected void setExcludedFields() {
+    private void setExcludedFields() {
         List<String> excludedFields = new ArrayList<>();
-        excludedFields.addAll(excludedFields);
+//        excludedFields.add("firstName");
         super.setExcludedFields(excludedFields);
     }
 }

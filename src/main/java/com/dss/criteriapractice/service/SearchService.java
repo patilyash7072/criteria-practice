@@ -2,19 +2,18 @@ package com.dss.criteriapractice.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.*;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 
-public class SearchService<ENTITY, DTO>{
+public class SearchService<ENTITY, DTO> {
 
     private final EntityManager em;
     private final Class<ENTITY> clazz;
@@ -30,7 +29,6 @@ public class SearchService<ENTITY, DTO>{
 
     public List<DTO> search(String search) {
         List<Field> fieldList = Arrays.stream(clazz.getDeclaredFields())
-                .filter(f -> f.getGenericType().equals(String.class))
                 .filter(this::checkExcluded)
                 .toList();
         return searchAllFields(fieldList, search).stream().map(toDTO).toList();
@@ -52,14 +50,28 @@ public class SearchService<ENTITY, DTO>{
         query.where(
                 criteriaBuilder.or(
                         fieldList.stream()
-                                .map(f -> criteriaBuilder.like(criteriaBuilder.lower(root.get(f.getName())), searchText))
-                                .toArray(Predicate[]::new)
+                                .flatMap(f -> getCriteriaBuilderQuery(f, root, criteriaBuilder, searchText))
+                                .toList()
                 )
         );
 
         TypedQuery<ENTITY> typedQuery = em.createQuery(query);
         return typedQuery.getResultList();
     }
+
+    private Stream<Predicate> getCriteriaBuilderQuery(Field f, Path<ENTITY> root, CriteriaBuilder cb, String searchTerm) {
+        Type genericType = f.getGenericType();
+        if (f.getType().getClassLoader() != null) {
+            Class entityClass = f.getType();
+            return Arrays.stream(entityClass.getDeclaredFields())
+                    .flatMap(field -> getCriteriaBuilderQuery(field, root.get(f.getName()), cb, searchTerm));
+        } else if (genericType.equals(String.class)) {
+            return Stream.of(cb.like(cb.lower(root.get(f.getName())), searchTerm));
+        } else {
+            return Stream.of(cb.disjunction());
+        }
+    }
+
 
     private boolean checkExcluded(Field f) {
         return excludedFields.stream().noneMatch(s -> s.equalsIgnoreCase(f.getName()));
